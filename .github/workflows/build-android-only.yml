@@ -1,0 +1,73 @@
+name: Build Android Only
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master, main ]
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi
+    
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26c
+
+      - name: Clean build environment
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew clean
+          cd ..
+          cd flutter
+          flutter clean
+          rm -rf pubspec.lock
+          cd ..
+
+      - name: Get Flutter dependencies
+        run: |
+          cd flutter
+          flutter pub get
+
+      - name: Setup NDK environment
+        run: |
+          echo "ANDROID_NDK=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+
+      - name: Build Android APK
+        run: |
+          cd flutter
+          flutter build apk --release --split-per-abi
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-android
+          path: flutter/build/app/outputs/flutter-apk/*.apk
