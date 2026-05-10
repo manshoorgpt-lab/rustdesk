@@ -1,11 +1,11 @@
-name: Build Android APK
+name: Build Android Only
 
 on:
   workflow_dispatch:
 
 jobs:
   build-android:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,6 +23,12 @@ jobs:
           channel: 'stable'
           flutter-version: '3.24.5'
 
+      - name: Setup vcpkg
+        run: |
+          git clone https://github.com/Microsoft/vcpkg.git
+          ./vcpkg/bootstrap-vcpkg.sh
+          echo "VCPKG_ROOT=${{ github.workspace }}/vcpkg" >> $GITHUB_ENV
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@v1
         with:
@@ -34,14 +40,6 @@ jobs:
         with:
           ndk-version: r26c
 
-      - name: Build Rust library for Android
-        run: |
-          rustup target add aarch64-linux-android
-          cargo install cargo-ndk --vers 3.1.2 --locked
-          cargo ndk -t arm64-v8a -o ./flutter/android/app/src/main/jniLibs build --release
-        env:
-          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
-
       - name: Build Android APK
         run: |
           cd flutter
@@ -49,6 +47,9 @@ jobs:
           # استفاده از debug signing (بدون نیاز به keystore)
           sed -i "s/signingConfigs.release/signingConfigs.debug/g" android/app/build.gradle
           flutter build apk --release --split-per-abi
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
