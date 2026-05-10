@@ -1,0 +1,57 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.24.5'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: '1.75'
+          targets: aarch64-linux-android
+
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r26c
+
+      - name: Build Rust library for Android
+        run: |
+          rustup target add aarch64-linux-android
+          cargo install cargo-ndk --vers 3.1.2 --locked
+          cargo ndk -t arm64-v8a -o ./flutter/android/app/src/main/jniLibs build --release
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+
+      - name: Build Android APK
+        run: |
+          cd flutter
+          flutter pub get
+          # استفاده از debug signing (بدون نیاز به keystore)
+          sed -i "s/signingConfigs.release/signingConfigs.debug/g" android/app/build.gradle
+          flutter build apk --release --split-per-abi
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-android
+          path: flutter/build/app/outputs/flutter-apk/*.apk
