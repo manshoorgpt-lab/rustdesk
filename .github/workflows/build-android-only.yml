@@ -22,12 +22,16 @@ jobs:
         with:
           toolchain: '1.75'
 
+      - name: Install flutter_rust_bridge
+        run: |
+          cargo install flutter_rust_bridge_codegen --version 1.80.1
+
       - name: Generate bridge files
         run: |
           cd flutter
           flutter pub get
-          dart run flutter_rust_bridge:codegen \
-            --rust-input ./../src/flutter_ffi.rs \
+          flutter_rust_bridge_codegen \
+            --rust-input ../src/flutter_ffi.rs \
             --dart-output ./lib/generated_bridge.dart
 
       - name: Upload bridge artifact
