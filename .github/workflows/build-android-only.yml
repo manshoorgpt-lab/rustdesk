@@ -22,6 +22,7 @@ jobs:
         with:
           toolchain: '1.86.0'
           targets: aarch64-linux-android
+          components: rustfmt
 
       - name: Install flutter_rust_bridge_codegen
         run: |
