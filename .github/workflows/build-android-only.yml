@@ -36,7 +36,7 @@ jobs:
             --rust-input ../src/flutter_ffi.rs \
             --dart-output ./lib/generated_bridge.dart
 
-      - name: Run build_runner to generate freezed files
+      - name: Run build_runner
         run: |
           cd flutter
           dart run build_runner build --delete-conflicting-outputs
@@ -86,14 +86,19 @@ jobs:
         with:
           ndk-version: r26c
 
-      - name: Build Android APK
+      - name: Increase memory and build Android APK
         run: |
           cd flutter
           flutter pub get
+          
+          echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m" >> android/gradle.properties
+          
           sed -i "s/signingConfigs.release/signingConfigs.debug/g" android/app/build.gradle
+          
           flutter build apk --release --split-per-abi
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          GRADLE_OPTS: "-Xmx4096m -Dorg.gradle.daemon=false"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
