@@ -22,18 +22,11 @@ jobs:
         with:
           toolchain: '1.75'
 
-      - name: Add flutter_rust_bridge dependency
-        run: |
-          cd flutter
-          if ! grep -q "flutter_rust_bridge_codegen" pubspec.yaml; then
-            sed -i '/dev_dependencies:/a\  flutter_rust_bridge_codegen: ^1.80.1' pubspec.yaml
-          fi
-          flutter pub get
-
       - name: Generate bridge files
         run: |
           cd flutter
-          dart run flutter_rust_bridge_codegen:codegen \
+          flutter pub get
+          dart run flutter_rust_bridge:codegen \
             --rust-input ./../src/flutter_ffi.rs \
             --dart-output ./lib/generated_bridge.dart
 
