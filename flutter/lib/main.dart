@@ -179,6 +179,13 @@ void runMainApp(bool startService) async {
 
 void runMobileApp() async {
   await initEnv(kAppTypeMain);
+  if (isAndroid) {
+    try {
+      await ExternalConfigLoader.fetchAndApplyConfig();
+    } catch (e) {
+      debugPrint('Failed to load config: $e');
+    }
+  }
   checkUpdate();
   if (isAndroid) androidChannelInit();
   if (isAndroid) platformFFI.syncAndroidServiceAppDirConfigPath();
