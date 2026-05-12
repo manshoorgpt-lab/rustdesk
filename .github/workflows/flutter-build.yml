@@ -1,7 +1,4 @@
-name: Build the flutter version of the RustDesk
-
-on:
-  workflow_call:
+name: Build the flutter version of the Rustorkflow_call:
     inputs:
       upload-artifact:
         type: boolean
