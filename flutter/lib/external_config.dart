@@ -5,10 +5,12 @@ import 'package:http/http.dart' as http;
 import 'common.dart';
 import 'package:flutter_hbb/generated_bridge.dart';
 
+
 class ExternalConfigLoader {
   static const String CONFIG_FOLDER = 'rust';
   static const String CONFIG_FILE_NAME = 'servercfg.json';
   static const String CONFIG_URL = 'https://msarm.ir/rust/servercfg.json';
+
   
   /// Download config from server and save to external storage
   static Future<bool> downloadAndSaveConfig() async {
