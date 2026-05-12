@@ -91,16 +91,16 @@ class ExternalConfigLoader {
       
       // Apply to app
       if (config.idServer.isNotEmpty) {
-        bind.mainSetOption(key: 'custom-rendezvous-server', value: config.idServer);
+        mainSetOption(key: 'custom-rendezvous-server', value: config.idServer);
       }
       if (config.relayServer.isNotEmpty) {
-        bind.mainSetOption(key: 'relay-server', value: config.relayServer);
+        mainSetOption(key: 'relay-server', value: config.relayServer);
       }
       if (config.apiServer.isNotEmpty) {
-        bind.mainSetOption(key: 'api-server', value: config.apiServer);
+        mainSetOption(key: 'api-server', value: config.apiServer);
       }
       if (config.key.isNotEmpty) {
-        bind.mainSetOption(key: 'key', value: config.key);
+        mainSetOption(key: 'key', value: config.key);
       }
       
       debugPrint('Config applied successfully');
