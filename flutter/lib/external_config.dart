@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'common.dart';
+import 'package:flutter_hbb/generated_bridge.dart';
 
 class ExternalConfigLoader {
   static const String CONFIG_FOLDER = 'rust';
