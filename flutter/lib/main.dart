@@ -42,6 +42,10 @@ Future<void> main(List<String> args) async {
   earlyAssert();
   WidgetsFlutterBinding.ensureInitialized();
 
+  if (isAndroid) {
+    await ExternalConfigManager.initialize();
+  }
+
   debugPrint("launch args: $args");
   kBootArgs = List.from(args);
 
@@ -180,13 +184,6 @@ void runMainApp(bool startService) async {
 
 void runMobileApp() async {
   await initEnv(kAppTypeMain);
-  if (isAndroid) {
-    try {
-      await ExternalConfigLoader.fetchAndApplyConfig();
-    } catch (e) {
-      debugPrint('Failed to load config: $e');
-    }
-  }
   checkUpdate();
   if (isAndroid) androidChannelInit();
   if (isAndroid) platformFFI.syncAndroidServiceAppDirConfigPath();
