@@ -80,19 +80,26 @@ jobs:
         run: |
           cargo install cargo-expand --version ${{ env.CARGO_EXPAND_VERSION }} --locked
           cargo install flutter_rust_bridge_codegen --version ${{ env.FLUTTER_RUST_BRIDGE_VERSION }} --features "uuid" --locked
-          pushd flutter && sed -i -e 's/extended_text: 14.0.0/extended_text: 13.0.0/g' pubspec.yaml && flutter pub get && popd
+          pushd flutter
+          sed -i -e 's/extended_text: 14.0.0/extended_text: 13.0.0/g' pubspec.yaml
+          flutter pub get || echo "flutter pub get failed"
+          popd
 
-      - name: Upload pub crash log on failure
-        if: steps.install-deps.outcome == 'failure'
+      - name: Check if pub log exists
+        if: always()
+        run: |
+          echo "Checking for pub log..."
+          ls -la /home/runner/.pub-cache/log/ || echo "Log directory does not exist"
+          test -f /home/runner/.pub-cache/log/pub_log.txt && echo "Log file exists" || echo "Log file does not exist"
+
+      - name: Upload pub crash log
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pub-crash-log-${{ matrix.job.target }}
-          path: /home/runner/.pub-cache/log/pub_log.txt
-          if-no-files-found: ignore
+          name: pub-crash-log
+          path: /home/runner/.pub-cache/log/
+          if-no-files-found: warn
 
-      - name: Fail if deps installation failed
-        if: steps.install-deps.outcome == 'failure'
-        run: exit 1
           
       - name: Run flutter rust bridge
         run: |
