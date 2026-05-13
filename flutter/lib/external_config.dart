@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'common.dart';
 import 'package:flutter_hbb/generated_bridge.dart';
-import 'package:your_package_name/generated_bridge.dart';
 
 
 class ExternalConfigLoader {
