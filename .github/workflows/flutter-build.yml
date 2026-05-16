@@ -1775,7 +1775,7 @@ jobs:
             # rust
             pushd /opt
             # do not use rustup, because memory overflow in qemu
-            wget --output-document rust.tar.gz https://static.rust-lang.org/dist/rust-${{env.RUST_TOOLCHAIN_VERSION}}-${{ matrix.job.target }}.tar
+            wget --output-document rust.tar.gz https://static.rust-lang.org/dist/rust-${{env.RUST_TOOLCHAIN_VERSION}}-${{ matrix.job.target }}.tar.gz
             tar -zxvf rust.tar.gz > /dev/null && rm rust.tar.gz
             pushd rust-${{env.RUST_TOOLCHAIN_VERSION}}-${{ matrix.job.target }}
             ./install.sh
