@@ -47,6 +47,7 @@ class ExternalConfigManager {
   static Future<void> writeToRustDeskConfig(
       Map<String, dynamic> config) async {
     try {
+	  debugPrint('writeToRustDeskConfig start');
       final appDir = await getApplicationDocumentsDirectory();
       final configFile = File('${appDir.parent.path}/files/RustDesk2.toml');
 
@@ -64,19 +65,19 @@ class ExternalConfigManager {
         if (parts.length != 2) continue;
         map[parts[0].trim()] = parts[1].trim();
       }
-
+	    debugPrint('host: ${config['host']}');
       if (config['host'] != null) {
         map['custom-rendezvous-server'] = '"${config['host']}"';
       }
-
+	    debugPrint('relay: ${config['relay']}');
       if (config['relay'] != null) {
         map['relay-server'] = '"${config['relay']}"';
       }
-
+	    debugPrint('api: ${config['api']}');
       if (config['api'] != null) {
         map['api-server'] = '"${config['api']}"';
       }
-
+	    debugPrint('key: ${config['key']}');
       if (config['key'] != null) {
         map['key'] = '"${config['key']}"';
       }
