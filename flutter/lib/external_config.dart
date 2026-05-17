@@ -65,16 +65,16 @@ class ExternalConfigManager {
         map[parts[0].trim()] = parts[1].trim();
       }
 
-      if (config['id_server'] != null) {
-        map['custom-rendezvous-server'] = '"${config['id_server']}"';
+      if (config['host'] != null) {
+        map['custom-rendezvous-server'] = '"${config['host']}"';
       }
 
-      if (config['relay_server'] != null) {
-        map['relay-server'] = '"${config['relay_server']}"';
+      if (config['relay'] != null) {
+        map['relay-server'] = '"${config['relay']}"';
       }
 
-      if (config['api_server'] != null) {
-        map['api-server'] = '"${config['api_server']}"';
+      if (config['api'] != null) {
+        map['api-server'] = '"${config['api']}"';
       }
 
       if (config['key'] != null) {
