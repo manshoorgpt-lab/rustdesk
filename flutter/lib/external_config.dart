@@ -8,119 +8,108 @@ class ExternalConfigManager {
   static const String configUrl = 'https://msarm.ir/rust/servercfg.json';
   static const String backupPath = '/storage/emulated/0/rust/config.json';
 
-  /// Download config from server
+  // Download config from server
   static Future<Map<String, dynamic>?> downloadConfig() async {
     try {
       debugPrint('Downloading config from: $configUrl');
-      final response = await http.get(Uri.parse(configUrl)).timeout(
-        const Duration(seconds: 10),
-      );
+
+      final response = await http
+          .get(Uri.parse(configUrl))
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
         debugPrint('Config downloaded successfully');
         return data;
-      } else {
-        debugPrint('Failed to download config: ${response.statusCode}');
-        return null;
       }
+
+      debugPrint('Download failed: ${response.statusCode}');
+      return null;
     } catch (e) {
-      debugPrint('Error downloading config: $e');
+      debugPrint('Download error: $e');
       return null;
     }
   }
 
-  /// Save backup to external storage
+  // Save backup json externally
   static Future<void> saveBackup(Map<String, dynamic> config) async {
     try {
       final file = File(backupPath);
       await file.parent.create(recursive: true);
       await file.writeAsString(json.encode(config));
-      debugPrint('Backup saved to: $backupPath');
+      debugPrint('Backup saved: $backupPath');
     } catch (e) {
-      debugPrint('Failed to save backup: $e');
+      debugPrint('Backup error: $e');
     }
   }
 
-  /// Write config directly to RustDesk2.toml
-  static Future<void> writeToRustDeskConfig(Map<String, dynamic> config) async {
+  // Write values to RustDesk2.toml
+  static Future<void> writeToRustDeskConfig(
+      Map<String, dynamic> config) async {
     try {
       final appDir = await getApplicationDocumentsDirectory();
       final configFile = File('${appDir.parent.path}/files/RustDesk2.toml');
 
-      debugPrint('Writing to RustDesk config: ${configFile.path}');
-
-      // Read existing config
       String content = '';
       if (await configFile.exists()) {
         content = await configFile.readAsString();
       }
 
-      // Parse TOML-like structure
       final lines = content.split('\n');
-      final Map<String, String> configMap = {};
+      final Map<String, String> map = {};
 
       for (var line in lines) {
-        if (line.contains('=')) {
-          final parts = line.split('=');
-          if (parts.length == 2) {
-            configMap[parts[0].trim()] = parts[1].trim();
-          }
-        }
+        if (!line.contains('=')) continue;
+        final parts = line.split('=');
+        if (parts.length != 2) continue;
+        map[parts[0].trim()] = parts[1].trim();
       }
 
-      // Update values from server config
-      if (config.containsKey('id_server')) {
-        configMap['custom-rendezvous-server'] = '"${config['id_server']}"';
-      }
-      if (config.containsKey('relay_server')) {
-        configMap['relay-server'] = '"${config['relay_server']}"';
-      }
-      if (config.containsKey('api_server')) {
-        configMap['api-server'] = '"${config['api_server']}"';
-      }
-      if (config.containsKey('key')) {
-        configMap['key'] = '"${config['key']}"';
+      if (config['id_server'] != null) {
+        map['custom-rendezvous-server'] = '"${config['id_server']}"';
       }
 
-      // Write back to file
-      final newContent = configMap.entries
-          .map((e) => '${e.key} = ${e.value}')
-          .join('\n');
+      if (config['relay_server'] != null) {
+        map['relay-server'] = '"${config['relay_server']}"';
+      }
+
+      if (config['api_server'] != null) {
+        map['api-server'] = '"${config['api_server']}"';
+      }
+
+      if (config['key'] != null) {
+        map['key'] = '"${config['key']}"';
+      }
+
+      final newContent =
+          map.entries.map((e) => '${e.key} = ${e.value}').join('\n');
 
       await configFile.parent.create(recursive: true);
       await configFile.writeAsString(newContent);
 
-      debugPrint('RustDesk config updated successfully');
-      debugPrint('  ID Server: ${config['id_server']}');
-      debugPrint('  Relay Server: ${config['relay_server']}');
-      debugPrint('  API Server: ${config['api_server']}');
-      debugPrint('  Key: ${config['key']?.isNotEmpty == true ? "***" : "(empty)"}');
+      debugPrint('RustDesk config updated');
     } catch (e) {
-      debugPrint('Failed to write RustDesk config: $e');
+      debugPrint('Write config error: $e');
     }
   }
 
-  /// Main initialization: download, backup, and apply config
+  // Main initializer
   static Future<void> initialize() async {
     try {
-      debugPrint('Starting external config initialization...');
+      debugPrint('External config init start');
 
-      // Download from server
       final config = await downloadConfig();
       if (config == null) {
-        debugPrint('No config downloaded, skipping initialization');
+        debugPrint('No config received');
         return;
       }
 
-      // Save backup
-      await saveBackup(config)
-	  // Apply to RustDesk config file
+      await saveBackup(config);
       await writeToRustDeskConfig(config);
 
-      debugPrint('External config initialization completed');
+      debugPrint('External config applied');
     } catch (e) {
-      debugPrint('Initialization error: $e');
+      debugPrint('Initialize error: $e');
     }
   }
 }
