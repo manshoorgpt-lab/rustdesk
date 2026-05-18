@@ -1,10 +1,9 @@
-import 'dart:convert';
 import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:flutter_hbb/models/server_model.dart';
-import 'package:flutter_hbb/consts.dart';
+import '../common.dart';
 
 class ExternalConfig {
   static const String configUrl = 'https://msarm.ir/rust/servercfg.json';
