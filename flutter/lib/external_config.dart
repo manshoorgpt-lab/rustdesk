@@ -5,152 +5,229 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import '../common.dart';
 
-class ExternalConfig {
+class ExternalConfigManager {
   static const String configUrl = 'https://msarm.ir/rust/servercfg.json';
-  static const String configPath = '/storage/emulated/0/rust/';
-  static const String configFileName = 'config.json';
-  static const String rustdeskConfigName = 'RustDesk2.toml';
+  static const String backupPath = '/storage/emulated/0/rust/config.json';
 
-  static Future<ServerConfig?> downloadConfig(String url) async {
+  static Future<Map<String, String>?> downloadConfig() async {
     try {
-      final response = await http.get(Uri.parse(url));
+      debugPrint('Downloading config from: $configUrl');
+      
+      final response = await http.get(Uri.parse(configUrl)).timeout(
+        const Duration(seconds: 10),
+      );
 
-      if (response.statusCode != 200) {
-        print('Config download failed: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        debugPrint('Config downloaded successfully');
+        
+        return {
+          'id_server': json['host']?.toString() ?? '',
+          'relay_server': json['relay']?.toString() ?? '',
+          'api_server': json['api']?.toString() ?? '',
+          'key': json['key']?.toString() ?? '',
+        };
+      } else {
+        debugPrint('Server returned: ${response.statusCode}');
         return null;
       }
-
-      final data = jsonDecode(response.body);
-
-      return ServerConfig(
-        idServer: data['host'] ?? '',
-        relayServer: data['relay'] ?? '',
-        apiServer: data['api'] ?? '',
-        key: data['key'] ?? '',
-      );
     } catch (e) {
-      print('downloadConfig error: $e');
+      debugPrint('Download error: $e');
       return null;
     }
   }
 
-  static Future<void> saveConfigJson(ServerConfig config) async {
+  static Future<Map<String, String>?> loadBackup() async {
     try {
-      final file = File(p.join(configPath, configFileName));
-
-      final jsonData = {
-        "id_server": config.idServer,
-        "relay_server": config.relayServer,
-        "api_server": config.apiServer,
-        "key": config.key,
-      };
-
-      await file.writeAsString(jsonEncode(jsonData));
-      print('Config saved to config.json');
+      final file = File(backupPath);
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        final json = jsonDecode(content) as Map<String, dynamic>;
+        debugPrint('Backup loaded from: $backupPath');
+        
+        return {
+          'id_server': json['id_server']?.toString() ?? '',
+          'relay_server': json['relay_server']?.toString() ?? '',
+          'api_server': json['api_server']?.toString() ?? '',
+          'key': json['key']?.toString() ?? '',
+        };
+      }
     } catch (e) {
-      print('saveConfigJson error: $e');
+      debugPrint('Backup load error: $e');
+    }
+    return null;
+  }
+
+  static Future<void> saveBackup(Map<String, String> config) async {
+    try {
+      final file = File(backupPath);
+      await file.parent.create(recursive: true);
+      await file.writeAsString(jsonEncode(config));
+      debugPrint('Backup saved: $backupPath');
+    } catch (e) {
+      debugPrint('Backup save error: $e');
     }
   }
 
-  static Future<void> writeRustDeskToml(ServerConfig config) async {
+  static Future<Map<String, String>> readCurrentConfig() async {
     try {
-      final dir = await getApplicationSupportDirectory();
-      final file = File(p.join(dir.path, rustdeskConfigName));
+      final appDir = await getApplicationDocumentsDirectory();
+      final configFile = File('${appDir.path}/RustDesk2.toml');
 
-      String content = '';
-      if (await file.exists()) {
-        content = await file.readAsString();
+      if (!await configFile.exists()) {
+        return {};
       }
 
+      final content = await configFile.readAsString();
       final lines = content.split('\n');
 
-      lines.removeWhere((line) {
+      final config = <String, String>{};
+
+      for (final line in lines) {
+        final trimmed = line.trim();
+        
+        if (trimmed.startsWith('custom-rendezvous-server')) {
+          final match = RegExp(r'=\s*"([^"]*)"').firstMatch(trimmed);
+          if (match != null) config['id_server'] = match.group(1) ?? '';
+        } else if (trimmed.startsWith('relay-server')) {
+          final match = RegExp(r'=\s*"([^"]*)"').firstMatch(trimmed);
+          if (match != null) config['relay_server'] = match.group(1) ?? '';
+        } else if (trimmed.startsWith('api-server')) {
+          final match = RegExp(r'=\s*"([^"]*)"').firstMatch(trimmed);
+          if (match != null) config['api_server'] = match.group(1) ?? '';
+        } else if (trimmed.startsWith('key =')) {
+          final match = RegExp(r'=\s*"([^"]*)"').firstMatch(trimmed);
+          if (match != null) config['key'] = match.group(1) ?? '';
+        }
+      }
+
+      return config;
+    } catch (e) {
+      debugPrint('Read config error: $e');
+      return {};
+    }
+  }
+
+  static bool configChanged(
+    Map<String, String> current,
+    Map<String, String> newConfig,
+  ) {
+    return current['id_server'] != newConfig['id_server'] ||
+        current['relay_server'] != newConfig['relay_server'] ||
+        current['api_server'] != newConfig['api_server'] ||
+        current['key'] != newConfig['key'];
+  }
+
+  static Future<void> writeToRustDeskConfig(
+      Map<String, String> config) async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final configFile = File('${appDir.path}/RustDesk2.toml');
+
+      String existingContent = '';
+      if (await configFile.exists()) {
+        existingContent = await configFile.readAsString();
+      }
+
+      final lines = existingContent.split('\n');
+
+      final filtered = lines.where((line) {
         final t = line.trim();
-        return t.startsWith('custom-rendezvous-server') ||
-            t.startsWith('relay-server') ||
-            t.startsWith('api-server') ||
-            t.startsWith('key');
-      });
+        return !t.startsWith('custom-rendezvous-server') &&
+            !t.startsWith('relay-server') &&
+            !t.startsWith('api-server') &&
+            !t.startsWith('key');
+      }).toList();
 
-      if (config.idServer.isNotEmpty) {
-        lines.add('custom-rendezvous-server = "${config.idServer}"');
+      if (filtered.isNotEmpty && filtered.last.trim().isNotEmpty) {
+        filtered.add('');
       }
 
-      if (config.relayServer.isNotEmpty) {
-        lines.add('relay-server = "${config.relayServer}"');
+      if (config['id_server']!.isNotEmpty) {
+        filtered.add('custom-rendezvous-server = "${config['id_server']}"');
       }
 
-      if (config.apiServer.isNotEmpty) {
-        lines.add('api-server = "${config.apiServer}"');
+      if (config['relay_server']!.isNotEmpty) {
+        filtered.add('relay-server = "${config['relay_server']}"');
       }
 
-      if (config.key.isNotEmpty) {
-        lines.add('key = "${config.key}"');
+      if (config['api_server']!.isNotEmpty) {
+        filtered.add('api-server = "${config['api_server']}"');
       }
 
-      await file.writeAsString(lines.join('\n'));
-      print('RustDesk2.toml updated');
+      if (config['key']!.isNotEmpty) {
+        filtered.add('key = "${config['key']}"');
+      }
+
+      await configFile.writeAsString(filtered.join('\n'));
+
+      debugPrint('RustDesk2.toml updated');
     } catch (e) {
-      print('writeRustDeskToml error: $e');
+      debugPrint('Write config error: $e');
     }
   }
 
-  static Future<void> applyMainOptions(ServerConfig config) async {
+  static void applyRuntimeConfig(Map<String, String> config) {
     try {
-      if (config.idServer.isNotEmpty) {
-        await bind.mainSetOption(
-          key: 'custom-rendezvous-server',
-          value: config.idServer,
-        );
+      if (config['id_server']!.isNotEmpty) {
+        bind.mainSetOption(
+            key: 'custom-rendezvous-server', value: config['id_server']!);
       }
 
-      if (config.relayServer.isNotEmpty) {
-        await bind.mainSetOption(
-          key: 'relay-server',
-          value: config.relayServer,
-        );
+      if (config['relay_server']!.isNotEmpty) {
+        bind.mainSetOption(
+            key: 'relay-server', value: config['relay_server']!);
       }
 
-      if (config.apiServer.isNotEmpty) {
-        await bind.mainSetOption(
-          key: 'api-server',
-          value: config.apiServer,
-        );
+      if (config['api_server']!.isNotEmpty) {
+        bind.mainSetOption(
+            key: 'api-server', value: config['api_server']!);
       }
 
-      if (config.key.isNotEmpty) {
-        await bind.mainSetOption(
-          key: 'key',
-          value: config.key,
-        );
+      if (config['key']!.isNotEmpty) {
+        bind.mainSetOption(key: 'key', value: config['key']!);
       }
 
-      print('mainSetOption applied');
+      debugPrint('Runtime config applied (bind)');
     } catch (e) {
-      print('applyMainOptions error: $e');
+      debugPrint('bind apply error: $e');
     }
   }
 
-  static Future<ServerConfig> loadCurrentConfig() async {
-    final options = await bind.mainGetOptions();
-    return ServerConfig.fromOptions(options);
-  }
+  static Future<void> initialize() async {
+  try {
+    debugPrint('External config init');
 
-  static Future<void> initialize(configUrl) async {
-    try {
-      final config = await downloadConfig(url);
-      if (config == null) return;
+    Map<String, String>? downloadedConfig = await downloadConfig();
 
-      await saveConfigJson(config);
-      await applyMainOptions(config);
-      await writeRustDeskToml(config);
-
-      // refresh options
-      await bind.mainGetOptions();
-
-      print('External config initialized');
-    } catch (e) {
-      print('initialize error: $e');
+    if (downloadedConfig != null) {
+      await saveBackup(downloadedConfig);
+      debugPrint('Downloaded config saved as backup');
     }
+
+    final config = await loadBackup();
+
+    if (config == null) {
+      debugPrint('No config available (neither download nor backup)');
+      return;
+    }
+
+    final current = await readCurrentConfig();
+
+    if (!configChanged(current, config)) {
+      debugPrint('Config unchanged, applying runtime only');
+      applyRuntimeConfig(config);
+      return;
+    }
+
+    await writeToRustDeskConfig(config);
+
+    applyRuntimeConfig(config);
+
+    debugPrint('External config initialized successfully');
+  } catch (e) {
+    debugPrint('Initialize error: $e');
   }
+}
+
 }
