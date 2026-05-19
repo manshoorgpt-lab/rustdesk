@@ -42,12 +42,13 @@ Future<void> main(List<String> args) async {
   earlyAssert();
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (isAndroid) {
-    await ExternalConfigManager.initialize();
-  }
-
   debugPrint("launch args: $args");
   kBootArgs = List.from(args);
+  
+  if (isAndroid) {
+    ExternalConfigManager.initialize(bind);
+    await ExternalConfigManager.initialize();
+  }
 
   if (!isDesktop) {
     runMobileApp();
