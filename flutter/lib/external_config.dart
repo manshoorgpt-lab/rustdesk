@@ -1,47 +1,51 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_hbb/common.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
-import 'package:flutter_hbb/common.dart';
-import 'package:flutter_hbb/generated_bridge.dart';
 
 class ExternalConfigManager {
-  static const String _configUrl = 'https://msarm.ir/rust/servercfg.json';
-  static const String _backupPath = '/storage/emulated/0/rust/config.json';
-  
-  static RustdeskImpl? _bind;
-  
-  static void initialize(RustdeskImpl bind) {
-    _bind = bind;
-  }
+  static const String configUrl = 'https://msarm.ir/rust/servercfg.json';
+  static const String backupPath = '/storage/emulated/0/rust/config.json';
+
+  static final Map<String, String> _cachedConfig = {};
 
   static Future<Map<String, String>?> downloadConfig() async {
     try {
-      final response = await http.get(Uri.parse(_configUrl));
+      debugPrint('Downloading config from: $configUrl');
+
+      final response = await http
+          .get(Uri.parse(configUrl))
+          .timeout(const Duration(seconds: 10));
+
       if (response.statusCode == 200) {
-        final Map<String, dynamic> json = jsonDecode(response.body);
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        debugPrint('Config downloaded successfully');
+
         return {
           'custom-rendezvous-server': json['host']?.toString() ?? '',
           'relay-server': json['relay']?.toString() ?? '',
           'api-server': json['api']?.toString() ?? '',
           'key': json['key']?.toString() ?? '',
         };
+      } else {
+        debugPrint('Server returned: ${response.statusCode}');
+        return null;
       }
-      debugPrint('Config download failed: ${response.statusCode}');
-      return null;
     } catch (e) {
-      debugPrint('Config download error: $e');
+      debugPrint('Download error: $e');
       return null;
     }
   }
 
   static Future<void> saveBackup(Map<String, String> config) async {
     try {
-      final file = File(_backupPath);
+      final file = File(backupPath);
+      await file.parent.create(recursive: true);
       await file.writeAsString(jsonEncode(config));
-      debugPrint('Backup saved');
+      debugPrint('Backup saved: $backupPath');
     } catch (e) {
       debugPrint('Backup save error: $e');
     }
@@ -49,98 +53,125 @@ class ExternalConfigManager {
 
   static Future<Map<String, String>?> readBackup() async {
     try {
-      final file = File(_backupPath);
+      final file = File(backupPath);
       if (await file.exists()) {
         final content = await file.readAsString();
-        final Map<String, dynamic> json = jsonDecode(content);
-        return json.map((key, value) => MapEntry(key, value.toString()));
+        final json = jsonDecode(content) as Map<String, dynamic>;
+        debugPrint('Backup loaded from: $backupPath');
+        return json.map((k, v) => MapEntry(k, v.toString()));
       }
-      return null;
     } catch (e) {
       debugPrint('Backup read error: $e');
-      return null;
     }
+    return null;
   }
 
-  static Future<void> applyRuntimeConfig(Map<String, String> config) async {
-    if (_bind == null) {
-      debugPrint('Error: bind not initialized');
-      return;
-    }
-    
+  static Future<void> writeToRustDeskConfig(
+    Map<String, String> config,
+  ) async {
     try {
-      for (final entry in config.entries) {
-        if (entry.value.isNotEmpty) {
-          await _bind!.mainSetOption(key: entry.key, value: entry.value);
-          debugPrint('Set ${entry.key} = ${entry.value}');
-        }
-      }
-      debugPrint('Runtime config applied successfully');
-    } catch (e) {
-      debugPrint('Runtime config error: $e');
-    }
-  }
+      final appDir = await getApplicationDocumentsDirectory();
+      final configFile = File('${appDir.path}/RustDesk2.toml');
 
-  static Future<void> applyRuntimeConfigBatch(Map<String, String> config) async {
-    if (_bind == null) {
-      debugPrint('Error: bind not initialized');
-      return;
-    }
-    
-    try {
-      final jsonString = jsonEncode(config);
-      await _bind!.mainSetOptions(json: jsonString);
-      debugPrint('Batch config applied: $jsonString');
-    } catch (e) {
-      debugPrint('Batch config error: $e');
-    }
-  }
+      debugPrint('Writing to: ${configFile.path}');
 
-  static Future<void> writeToRustDeskConfig(Map<String, String> config) async {
-    try {
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File(p.join(dir.path, 'RustDesk2.toml'));
-
-      String content = '';
-      if (await file.exists()) {
-        content = await file.readAsString();
+      String existingContent = '';
+      if (await configFile.exists()) {
+        existingContent = await configFile.readAsString();
       }
 
-      config.forEach((key, value) {
-        final regex = RegExp('^$key\\s*=.*\$', multiLine: true);
-        final newLine = "$key = '$value'";
-        if (regex.hasMatch(content)) {
-          content = content.replaceAll(regex, newLine);
-        } else {
-          content += '\n$newLine';
-        }
-      });
+      final lines = existingContent.split('\n');
+      final filteredLines = lines.where((line) {
+        final trimmed = line.trim();
+        return !trimmed.startsWith('custom-rendezvous-server') &&
+            !trimmed.startsWith('relay-server') &&
+            !trimmed.startsWith('api-server') &&
+            !trimmed.startsWith('key =');
+      }).toList();
 
-      await file.writeAsString(content.trim() + '\n');
-      debugPrint('RustDesk2.toml updated');
+      final newLines = <String>[];
+
+      if (filteredLines.isNotEmpty && filteredLines.last.trim().isNotEmpty) {
+        newLines.addAll(filteredLines);
+        newLines.add('');
+      } else {
+        newLines.addAll(filteredLines);
+      }
+
+      if (config['custom-rendezvous-server']?.isNotEmpty ?? false) {
+        newLines.add(
+          'custom-rendezvous-server = "${config['custom-rendezvous-server']}"',
+        );
+      }
+
+      if (config['relay-server']?.isNotEmpty ?? false) {
+        newLines.add('relay-server = "${config['relay-server']}"');
+      }
+
+      if (config['api-server']?.isNotEmpty ?? false) {
+        newLines.add('api-server = "${config['api-server']}"');
+      }
+
+      if (config['key']?.isNotEmpty ?? false) {
+        newLines.add('key = "${config['key']}"');
+      }
+
+      await configFile.writeAsString(newLines.join('\n'));
+            debugPrint('RustDesk config file updated');
     } catch (e) {
       debugPrint('Config write error: $e');
     }
   }
 
-  static Future<void> initialize() async {
-    debugPrint('ExternalConfigManager initializing...');
-
-    Map<String, String>? config = await downloadConfig();
-
-    if (config != null) {
-      await saveBackup(config);
-    } else {
-      debugPrint('Using backup config...');
-      config = await readBackup();
+  static Future<void> applyToRuntime() async {
+    if (_cachedConfig.isEmpty) {
+      debugPrint('Cached config empty, trying backup...');
+      final backup = await readBackup();
+      if (backup != null && backup.isNotEmpty) {
+        _cachedConfig.addAll(backup);
+      } else {
+        debugPrint('No config available for runtime');
+        return;
+      }
     }
 
-    if (config != null) {
+    for (final entry in _cachedConfig.entries) {
+      final key = entry.key;
+      final value = entry.value;
+
+      if (value.isEmpty) continue;
+
+      try {
+        bind.mainSetOption(key: key, value: value);
+        debugPrint('Set runtime option: $key = $value');
+      } catch (e) {
+        debugPrint('Runtime set error for $key: $e');
+      }
+    }
+  }
+
+  static Future<void> initialize() async {
+    try {
+      debugPrint('ExternalConfigManager: Starting initialization...');
+
+      Map<String, String>? config = await downloadConfig();
+
+      if (config != null && config.isNotEmpty) {
+        await saveBackup(config);
+      } else {
+        config ??= await readBackup();
+      }
+
+      if (config == null || config.isEmpty) {
+        debugPrint('No config available');
+        return;
+      }
+
       await writeToRustDeskConfig(config);
-      await applyRuntimeConfig(config);
-      debugPrint('ExternalConfigManager done');
-    } else {
-      debugPrint('No config available (online or backup)');
+
+      debugPrint('ExternalConfigManager initialized successfully');
+    } catch (e) {
+      debugPrint('Initialization error: $e');
     }
   }
 }
