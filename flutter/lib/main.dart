@@ -46,12 +46,12 @@ Future<void> main(List<String> args) async {
   kBootArgs = List.from(args);
   
   if (isAndroid) {
-    ExternalConfigManager.initialize(bind);
     await ExternalConfigManager.initialize();
   }
 
   if (!isDesktop) {
     runMobileApp();
+    await ExternalConfigManager.applyToRuntime();
     return;
   }
   // main window
