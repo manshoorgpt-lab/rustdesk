@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hbb/common.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter_hbb/models/platform_model.dart';
 
 class ExternalConfigManager {
   static const String configUrl = 'https://msarm.ir/rust/servercfg.json';
@@ -142,7 +143,7 @@ class ExternalConfigManager {
       if (value.isEmpty) continue;
 
       try {
-        bind.mainSetOption(key: key, value: value);
+        await platformFFI.setOption(key, value);
         debugPrint('Set runtime option: $key = $value');
       } catch (e) {
         debugPrint('Runtime set error for $key: $e');
