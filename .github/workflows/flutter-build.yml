@@ -527,6 +527,13 @@ jobs:
           name: liblibrustdesk.a
           path: target/aarch64-apple-ios/release/liblibrustdesk.a
 
+      - name: Generate bridge
+        shell: bash
+        run: |
+          cargo install flutter_rust_bridge_codegen --features "uuid"
+          flutter_rust_bridge_codegen --rust-input ./src/flutter_ffi.rs --dart-output ./flutter/lib/generated_bridge.dart
+          pushd flutter && flutter pub get --no-precompile && popd
+
       - name: Build rustdesk
         shell: bash
         run: |
@@ -1006,6 +1013,12 @@ jobs:
           name: librustdesk.so.${{ matrix.job.target }}
           path: ./target/${{ matrix.job.target }}/release/liblibrustdesk.so
 
+      - name: Generate bridge
+        run: |
+          cargo install flutter_rust_bridge_codegen --features "uuid"
+          flutter_rust_bridge_codegen --rust-input ./src/flutter_ffi.rs --dart-output ./flutter/lib/generated_bridge.dart
+          pushd flutter && flutter pub get --no-precompile && popd
+
       - name: Build rustdesk
         shell: bash
         env:
@@ -1214,6 +1227,12 @@ jobs:
         with:
           name: librustdesk.so.i686-linux-android
           path: ./flutter/android/app/src/main/jniLibs/x86
+
+      - name: Generate bridge
+        run: |
+          cargo install flutter_rust_bridge_codegen --features "uuid"
+          flutter_rust_bridge_codegen --rust-input ./src/flutter_ffi.rs --dart-output ./flutter/lib/generated_bridge.dart
+          pushd flutter && flutter pub get --no-precompile && popd
 
       - name: Build rustdesk
         shell: bash
@@ -2020,6 +2039,12 @@ jobs:
         run: |
           cd $(dirname $(dirname $(which flutter)))
           [[ "3.24.5" == ${{env.FLUTTER_VERSION}} ]] && git apply ${{ github.workspace }}/.github/patches/flutter_3.24.4_dropdown_menu_enableFilter.diff
+
+      - name: Generate bridge
+        run: |
+          cargo install flutter_rust_bridge_codegen --features "uuid"
+          flutter_rust_bridge_codegen --rust-input ./src/flutter_ffi.rs --dart-output ./flutter/lib/generated_bridge.dart
+          pushd flutter && flutter pub get --no-precompile && popd
 
       # https://rustdesk.com/docs/en/dev/build/web/
       - name: Build web
