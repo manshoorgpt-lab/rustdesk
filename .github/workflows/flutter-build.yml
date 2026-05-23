@@ -530,10 +530,10 @@ jobs:
       - name: Generate bridge
         shell: bash
         run: |
-          cargo install flutter_rust_bridge_codegen --features "uuid"
+          cargo install flutter_rust_bridge_codegen
           flutter_rust_bridge_codegen --rust-input ./src/flutter_ffi.rs --dart-output ./flutter/lib/generated_bridge.dart
           pushd flutter && flutter pub get --no-precompile && popd
-
+          
       - name: Build rustdesk
         shell: bash
         run: |
@@ -1014,8 +1014,9 @@ jobs:
           path: ./target/${{ matrix.job.target }}/release/liblibrustdesk.so
 
       - name: Generate bridge
+        shell: bash
         run: |
-          cargo install flutter_rust_bridge_codegen --features "uuid"
+          cargo install flutter_rust_bridge_codegen
           flutter_rust_bridge_codegen --rust-input ./src/flutter_ffi.rs --dart-output ./flutter/lib/generated_bridge.dart
           pushd flutter && flutter pub get --no-precompile && popd
 
@@ -1229,8 +1230,9 @@ jobs:
           path: ./flutter/android/app/src/main/jniLibs/x86
 
       - name: Generate bridge
+        shell: bash
         run: |
-          cargo install flutter_rust_bridge_codegen --features "uuid"
+          cargo install flutter_rust_bridge_codegen
           flutter_rust_bridge_codegen --rust-input ./src/flutter_ffi.rs --dart-output ./flutter/lib/generated_bridge.dart
           pushd flutter && flutter pub get --no-precompile && popd
 
@@ -2041,8 +2043,9 @@ jobs:
           [[ "3.24.5" == ${{env.FLUTTER_VERSION}} ]] && git apply ${{ github.workspace }}/.github/patches/flutter_3.24.4_dropdown_menu_enableFilter.diff
 
       - name: Generate bridge
+        shell: bash
         run: |
-          cargo install flutter_rust_bridge_codegen --features "uuid"
+          cargo install flutter_rust_bridge_codegen
           flutter_rust_bridge_codegen --rust-input ./src/flutter_ffi.rs --dart-output ./flutter/lib/generated_bridge.dart
           pushd flutter && flutter pub get --no-precompile && popd
 
