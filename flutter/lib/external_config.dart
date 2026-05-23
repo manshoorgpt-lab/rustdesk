@@ -144,9 +144,9 @@ class ExternalConfigManager {
 
       try {
         if (value is String) {
-          await ffiSetByName(key, value);
+          ffiSetByName(key, value);
         } else {
-          await ffiSetByName(key, value.toString());
+          ffiSetByName(key, value.toString());
         }
         debugPrint('Set runtime option: $key = $value');
       } catch (e) {
