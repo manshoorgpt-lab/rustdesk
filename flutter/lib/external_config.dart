@@ -143,7 +143,11 @@ class ExternalConfigManager {
       if (value.isEmpty) continue;
 
       try {
-        await platformFFI.setOption(key, value);
+        if (value is String) {
+          await ffiSetByName(key, value);
+        } else {
+          await ffiSetByName(key, value.toString());
+        }
         debugPrint('Set runtime option: $key = $value');
       } catch (e) {
         debugPrint('Runtime set error for $key: $e');
