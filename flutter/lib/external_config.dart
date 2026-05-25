@@ -173,7 +173,7 @@ class ExternalConfigManager {
       }
 
       await writeToRustDeskConfig(config);
-
+	    await applyToRuntime();
       debugPrint('ExternalConfigManager initialized successfully');
     } catch (e) {
       debugPrint('Initialization error: $e');
