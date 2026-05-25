@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_hbb/common.dart';
+import 'package:flutter_hbb/common.dart as common';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_hbb/models/platform_model.dart';
@@ -154,6 +154,21 @@ class ExternalConfigManager {
       }
     }
   }
+  
+  
+   static Future<String?> readConfigFile() async {
+     try {
+       final file = File(backupPath);
+       if (await file.exists()) {
+         final content = await file.readAsString();
+         debugPrint('cinfig loaded from: $backupPath');
+         return content;
+       }
+    } catch (e) {
+       debugPrint('Backup read error: $e');
+    }
+    return null;
+  }
 
   static Future<void> initialize() async {
     try {
@@ -163,17 +178,16 @@ class ExternalConfigManager {
 
       if (config != null && config.isNotEmpty) {
         await saveBackup(config);
-      } else {
-        config ??= await readBackup();
       }
-
-      if (config == null || config.isEmpty) {
+		
+	  final content = readConfigFile();
+      if (content == null || content.isEmpty) {
         debugPrint('No config available');
         return;
       }
 
       await writeToRustDeskConfig(config);
-	    await applyToRuntime();
+	  common.importConfig(null, null, content);
       debugPrint('ExternalConfigManager initialized successfully');
     } catch (e) {
       debugPrint('Initialization error: $e');
