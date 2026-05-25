@@ -3542,6 +3542,7 @@ Future<bool> setServerConfig(
   List<RxString>? errMsgs,
   ServerConfig config,
 ) async {
+  debugPrint('setServerConfig.');
   String removeEndSlash(String input) {
     if (input.endsWith('/')) {
       return input.substring(0, input.length - 1);
@@ -3598,6 +3599,7 @@ Future<bool> setServerConfig(
       gFFI.userModel.isLogin) {
     gFFI.userModel.logOut(apiServer: oldApiServer);
   }
+  debugPrint('setServerConfig true.');
   return true;
 }
 
