@@ -91,6 +91,7 @@ void showServerSettingsWithValue(
 
   dialogManager.show((setState, close, context) {
     Future<bool> submit() async {
+      debugPrint('submit.');
       setState(() {
         isInProgress = true;
       });
