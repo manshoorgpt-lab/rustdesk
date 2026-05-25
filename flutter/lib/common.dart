@@ -3510,6 +3510,7 @@ class _CountDownButtonState extends State<_CountDownButton> {
 importConfig(List<TextEditingController>? controllers, List<RxString>? errMsgs,
     String? text) {
   text = text?.trim();
+  debugPrint('importConfig: $text');
   if (text != null && text.isNotEmpty) {
     try {
       final sc = ServerConfig.decode(text);
@@ -3586,7 +3587,7 @@ Future<bool> setServerConfig(
     }
   }
   final oldApiServer = await bind.mainGetApiServer();
-
+  debugPrint('importConfig: $config.idServer');
   // should set one by one
   await bind.mainSetOption(
       key: 'custom-rendezvous-server', value: config.idServer);
