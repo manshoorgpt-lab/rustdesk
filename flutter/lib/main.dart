@@ -45,13 +45,8 @@ Future<void> main(List<String> args) async {
   debugPrint("launch args: $args");
   kBootArgs = List.from(args);
   
-  if (isAndroid) {
-    await ExternalConfigManager.initialize();
-  }
-
   if (!isDesktop) {
     runMobileApp();
-    await ExternalConfigManager.applyToRuntime();
     return;
   }
   // main window
@@ -186,6 +181,8 @@ void runMainApp(bool startService) async {
 void runMobileApp() async {
   await initEnv(kAppTypeMain);
   checkUpdate();
+  
+  if (isAndroid) await ExternalConfigManager.initialize();
   if (isAndroid) androidChannelInit();
   if (isAndroid) platformFFI.syncAndroidServiceAppDirConfigPath();
   draggablePositions.load();
