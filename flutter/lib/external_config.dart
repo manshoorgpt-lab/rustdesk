@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_hbb/common.dart as common';
+import 'package:flutter_hbb/common.dart' as common;
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_hbb/models/platform_model.dart';
@@ -180,7 +180,7 @@ class ExternalConfigManager {
         await saveBackup(config);
       }
 		
-	  final content = readConfigFile();
+	  final content = await readConfigFile();
       if (content == null || content.isEmpty) {
         debugPrint('No config available');
         return;
