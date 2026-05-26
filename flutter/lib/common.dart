@@ -3514,25 +3514,33 @@ importConfig(List<TextEditingController>? controllers, List<RxString>? errMsgs,
     
   if (text != null && text.isNotEmpty) {
     try {
+      debugPrint('importConfig: config is not null');
       final sc = ServerConfig.decode(text);
+      debugPrint('importConfig: sc is $sc');
       if (isWeb || isIOS) {
         sc.relayServer = '';
       }
       if (sc.idServer.isNotEmpty) {
+        debugPrint('importConfig: sc.idServer is not empty');
         Future<bool> success = setServerConfig(controllers, errMsgs, sc);
+        debugPrint('importConfig: success is $success');
         success.then((value) {
           if (value) {
             showToast(translate('Import server configuration successfully'));
+            debugPrint('importConfig: Import server configuration successfully');
           } else {
             showToast(translate('Invalid server configuration'));
+            debugPrint('importConfig: Invalid server configuration');
           }
         });
       } else {
         showToast(translate('Invalid server configuration'));
+        debugPrint('importConfig: Invalid server configuration');
       }
       return sc;
     } catch (e) {
       showToast(translate('Invalid server configuration'));
+      debugPrint('importConfig: Invalid server configuration');
     }
   } else {
     showToast(translate('Clipboard is empty'));
@@ -3556,6 +3564,7 @@ Future<bool> setServerConfig(
   config.relayServer = removeEndSlash(config.relayServer.trim());
   config.apiServer = removeEndSlash(config.apiServer.trim());
   config.key = config.key.trim();
+  debugPrint('setServerConfig: $config.idServer');
   if (controllers != null) {
     controllers[0].text = config.idServer;
     controllers[1].text = config.relayServer;
@@ -3588,7 +3597,7 @@ Future<bool> setServerConfig(
     }
   }
   final oldApiServer = await bind.mainGetApiServer();
-  debugPrint('importConfig: $config.idServer');
+  debugPrint('setServerConfig: $config.idServer');
   // should set one by one
   await bind.mainSetOption(
       key: 'custom-rendezvous-server', value: config.idServer);
