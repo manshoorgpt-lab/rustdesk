@@ -178,6 +178,8 @@ class ExternalConfigManager {
 
       if (config != null && config.isNotEmpty) {
         await saveBackup(config);
+		await writeToRustDeskConfig(config);
+		debugPrint('ExternalConfigManager: Backup saved successfully.');
       }
 		
 	  final content = await readConfigFile();
@@ -185,8 +187,7 @@ class ExternalConfigManager {
         debugPrint('No config available');
         return;
       }
-
-      await writeToRustDeskConfig(config);
+	  
 	  common.importConfig(null, null, content);
       debugPrint('ExternalConfigManager initialized successfully');
     } catch (e) {
