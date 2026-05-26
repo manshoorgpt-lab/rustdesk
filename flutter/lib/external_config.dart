@@ -26,9 +26,9 @@ class ExternalConfigManager {
         debugPrint('Config downloaded successfully');
 
         return {
-          'custom-rendezvous-server': json['host']?.toString() ?? '',
-          'relay-server': json['relay']?.toString() ?? '',
-          'api-server': json['api']?.toString() ?? '',
+          'host': json['host']?.toString() ?? '',
+          'relay': json['relay']?.toString() ?? '',
+          'api': json['api']?.toString() ?? '',
           'key': json['key']?.toString() ?? '',
         };
       } else {
@@ -99,17 +99,17 @@ class ExternalConfigManager {
         newLines.addAll(filteredLines);
       }
 
-      if (config['custom-rendezvous-server']?.isNotEmpty ?? false) {
+      if (config['host']?.isNotEmpty ?? false) {
         newLines.add(
           'custom-rendezvous-server = "${config['custom-rendezvous-server']}"',
         );
       }
 
-      if (config['relay-server']?.isNotEmpty ?? false) {
+      if (config['relay']?.isNotEmpty ?? false) {
         newLines.add('relay-server = "${config['relay-server']}"');
       }
 
-      if (config['api-server']?.isNotEmpty ?? false) {
+      if (config['api']?.isNotEmpty ?? false) {
         newLines.add('api-server = "${config['api-server']}"');
       }
 
@@ -178,7 +178,6 @@ class ExternalConfigManager {
 
       if (config != null && config.isNotEmpty) {
         await saveBackup(config);
-		await writeToRustDeskConfig(config);
 		debugPrint('ExternalConfigManager: Backup saved successfully.');
       }
 		
