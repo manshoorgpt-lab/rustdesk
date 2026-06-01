@@ -239,7 +239,6 @@ class ServiceNotRunningNotification extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final serverModel = Provider.of<ServerModel>(context);
-
     return PaddingCard(
         title: translate("Service is not running"),
         titleIcon:
