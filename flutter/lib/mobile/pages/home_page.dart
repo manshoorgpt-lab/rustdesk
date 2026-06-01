@@ -25,7 +25,7 @@ class HomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<HomePage> {
-  // var _selectedIndex = 0;
+  var _selectedIndex = 0;
   int _defaultIndex = 0;
   int get selectedIndex => _selectedIndex;
   final List<PageShape> _pages = [];
@@ -40,6 +40,18 @@ class HomePageState extends State<HomePage> {
     });
   }
 
+  void _setDefaultPage() {
+    if (_pages.isEmpty) {
+      _defaultIndex = 0;
+      _selectedIndex = 0;
+      return;
+    }
+
+    final serverIndex = _pages.indexWhere((page) => page is ServerPage);
+    _defaultIndex = serverIndex >= 0 ? serverIndex : 0;
+    _selectedIndex = _defaultIndex;
+  }
+  
   @override
   void initState() {
     super.initState();
@@ -175,12 +187,6 @@ class WebHomePage extends StatelessWidget {
     );
   }
 
-  void _setDefaultPage() {
-    final serverIndex = _pages.indexWhere((page) => page is ServerPage);
-    _defaultIndex = serverIndex >= 0 ? serverIndex : 0;
-    _selectedIndex = _defaultIndex;
-  }
-  
   handleUnilink(BuildContext context) {
     if (webInitialLink.isEmpty) {
       return;
