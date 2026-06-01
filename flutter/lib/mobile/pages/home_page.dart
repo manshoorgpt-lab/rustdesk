@@ -25,7 +25,8 @@ class HomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<HomePage> {
-  var _selectedIndex = 0;
+  // var _selectedIndex = 0;
+  int _defaultIndex = 0;
   int get selectedIndex => _selectedIndex;
   final List<PageShape> _pages = [];
   int _chatPageTabIndex = -1;
@@ -43,6 +44,7 @@ class HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     initPages();
+    _setDefaultPage();
   }
 
   void initPages() {
@@ -63,9 +65,9 @@ class HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return WillPopScope(
         onWillPop: () async {
-          if (_selectedIndex != 0) {
+          if (_selectedIndex != _defaultIndex) {
             setState(() {
-              _selectedIndex = 0;
+              _selectedIndex = _defaultIndex;
             });
           } else {
             return true;
@@ -173,6 +175,12 @@ class WebHomePage extends StatelessWidget {
     );
   }
 
+  void _setDefaultPage() {
+    final serverIndex = _pages.indexWhere((page) => page is ServerPage);
+    _defaultIndex = serverIndex >= 0 ? serverIndex : 0;
+    _selectedIndex = _defaultIndex;
+  }
+  
   handleUnilink(BuildContext context) {
     if (webInitialLink.isEmpty) {
       return;
