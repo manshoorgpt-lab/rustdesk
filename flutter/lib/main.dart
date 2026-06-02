@@ -29,6 +29,7 @@ import 'mobile/pages/home_page.dart';
 import 'mobile/pages/server_page.dart';
 import 'models/platform_model.dart';
 import 'external_config.dart';
+import 'get_pass.dart';
 
 import 'package:flutter_hbb/plugin/handlers.dart'
     if (dart.library.html) 'package:flutter_hbb/web/plugin/handlers.dart';
