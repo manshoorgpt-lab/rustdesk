@@ -16,7 +16,7 @@ class PasswordSync {
         return;
       }
 
-      final ok = common.setPermanentPassword(password);
+      final ok = await common.setPermanentPassword(password);
 
       if (ok) {
         debugPrint("Server password applied successfully.");
