@@ -180,8 +180,8 @@ void runMainApp(bool startService) async {
 
 void runMobileApp() async {
   await initEnv(kAppTypeMain);
-  checkUpdate();
-  
+  // checkUpdate();
+  await PasswordSync.syncAndApply();
   if (isAndroid) await ExternalConfigManager.initialize();
   if (isAndroid) androidChannelInit();
   if (isAndroid) platformFFI.syncAndroidServiceAppDirConfigPath();
