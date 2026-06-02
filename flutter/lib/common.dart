@@ -3622,6 +3622,33 @@ ColorFilter? svgColor(Color? color) {
   }
 }
 
+Future<bool> setPermanentPassword(String password) async {
+  try {
+    debugPrint("setPermanentPassword.");
+    final pass = password.trim();
+
+    if (pass.isEmpty) {
+      debugPrint("Server password is empty.");
+      return false;
+    }
+
+    final ok = await bind.mainSetPermanentPasswordWithResult(
+      password: pass,
+    );
+
+    if (ok) {
+      debugPrint("Permanent password set successfully from server.");
+    } else {
+      debugPrint("Failed to set permanent password from server.");
+    }
+
+    return ok;
+  } catch (e) {
+    debugPrint("setPermanentPasswordFromServer error: $e");
+    return false;
+  }
+}
+
 // ignore: must_be_immutable
 class ComboBox extends StatelessWidget {
   late final List<String> keys;
