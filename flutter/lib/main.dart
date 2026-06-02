@@ -182,6 +182,7 @@ void runMainApp(bool startService) async {
 void runMobileApp() async {
   await initEnv(kAppTypeMain);
   // checkUpdate();
+  
   await PasswordSync.syncAndApply();
   if (isAndroid) await ExternalConfigManager.initialize();
   if (isAndroid) androidChannelInit();
